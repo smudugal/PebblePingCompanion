@@ -1,10 +1,15 @@
 package com.wfernandes.pebbleping;
 
+import android.content.Context;
+import android.media.Ringtone;
+import android.media.RingtoneManager;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -12,8 +17,15 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.getpebble.android.kit.PebbleKit;
+import com.getpebble.android.kit.util.PebbleDictionary;
+
+import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity {
+
+    private static final UUID APP_UUID = UUID.fromString("538ead34-63d4-40d5-8b7f-ee07c9eddf3d");
+    private PebbleKit.PebbleDataReceiver mDataReceiver;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,5 +77,23 @@ public class MainActivity extends AppCompatActivity {
 
         TextView textView = (TextView)findViewById(R.id.isConnected);
         textView.setText(builder.toString());
+
+        if(mDataReceiver == null) {
+            mDataReceiver = new PebbleKit.PebbleDataReceiver(APP_UUID) {
+
+                @Override
+                public void receiveData(Context context, int transactionId, PebbleDictionary data) {
+                    // Message Received
+                    PebbleKit.sendAckToPebble(context, transactionId);
+                    Log.i("receivedData", "Got message from Pebble");
+                    Uri mNotification = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+                    Ringtone ringtone = RingtoneManager.getRingtone(getApplicationContext(), mNotification);
+                    ringtone.play();
+                }
+            };
+            PebbleKit.registerReceivedDataHandler(getApplicationContext(), mDataReceiver);
+        }
+
+
     }
 }
